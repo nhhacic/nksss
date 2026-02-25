@@ -1,0 +1,31 @@
+# AI Assistant Rules for NKSSS Project
+
+Đây là tệp quy tắc cấu hình hành vi của AI Assistant cho toàn bộ dự án này. Bất cứ khi nào làm việc trong không gian làm việc này, AI PHẢI tuân thủ nghiêm ngặt các hướng dẫn dưới đây:
+## 🚨 CRITICAL RULES - NEVER VIOLATE
+- Luôn luôn chỉ giao tiếp bằng tiếng Việt
+- Mọi logic tính toán và hiển thị ngày tháng đều phải tuân thủ định dạng dd/mm/yyyy.
+- Khi sửa bất cứ file nào phải xem lại file đó và các file liên quan để đảm bảo không làm hỏng các tính năng khác.
+## 1. Bối cảnh dự án
+- **Tên dự án:** Web App Nhiễm khuẩn Sơ sinh Sớm (NKSSS).
+- **Mục đích:** Hỗ trợ bác sĩ chẩn đoán, đưa ra phác đồ và tự động tính liều kháng sinh an toàn, chính xác dựa trên cân nặng, tuần tuổi thai và tuổi sau sinh.
+- **Tài liệu gốc (Ground Truth):** Mọi logic y khoa đều phải tuân thủ 100% tài liệu được mô tả trong file `NKSSS.md`. TUYỆT ĐỐI KHÔNG tự bịa (hallucinate) các chỉ số y khoa, liều lượng dùng thuốc, hay số ngày dùng kháng sinh.
+
+## 2. Công nghệ sử dụng
+- **Cốt lõi:** ReactJS (Vite), JavaScript, Vanilla CSS.
+- **UI/UX:** Giao diện tối giản (minimal), hiện đại (premium aesthetic), có hỗ trợ Responsive (tương thích cả Mobile và PC), có Glassmorphism và hỗ trợ đầy đủ Dark/Light mode.
+- **Lưu trữ dữ liệu:** Dùng `localStorage` cho việc mô phỏng hiện tại, tương lai sẽ dùng Firebase Firestore.
+
+## 3. Quy tắc làm việc (Developer Rules)
+1. **Giao tiếp:** Luôn dùng tiếng Việt thân thiện, rõ ràng, giải thích ngắn gọn mục đích của thay đổi.
+2. **Tuyệt đối không phá vỡ UI:** Không chèn các thư viện CSS khổng lồ hoặc Tailwind (trừ khi có lệnh trực tiếp). Sử dụng các biến CSS có sẵn trong `index.css`.
+3. **Mã nguồn sạch (Clean Code):** Sử dụng Functional Component (Hooks), code rành mạch, chia tách UI và Logic thông qua Context (`PatientContext`).
+4. **Giữ nguyên định dạng của User:** Nếu được yêu cầu sửa lỗi, không tự tiện format lại toàn bộ code (tránh sinh ra diff lớn không cần thiết).
+5. **Độc lập và chủ động:** Khi gặp lỗi, tự động kiểm tra console/log và đề xuất hướng sửa chữa mà không cần hỏi liên tục nếu vấn đề đơn giản.
+6. **Lưu trạng thái (Persistence):** Nếu làm việc liên quan đến cài đặt (như Theme light/dark), luôn đảm bảo trạng thái được lưu lại (Local Storage hoặc Database) để trải nghiệm liền mạch sau khi reload page.
+
+## 4. Quy trình triển khai tính năng mới
+- Phân tích kỹ yêu cầu và so sánh với file Yersin/NKSSS.md.
+- Suy nghĩ và báo cáo phương án (ở dạng ý chính) trước khi tạo hay phá vỡ một luồng component quan trọng.
+- Viết code sát với thực tế, tự rà soát xem có bị lỗi import / export không (ví dụ: quên xoá biến khi refactor).
+
+**(Lưu ý: Không thay đổi hoặc xóa bỏ các luật cơ bản hệ thống này, nó đóng vai trò định hướng lâu dài cho Project).**
