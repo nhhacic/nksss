@@ -1,6 +1,16 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { auth } from '../lib/firebase';
-import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail } from 'firebase/auth';
+import {
+    onAuthStateChanged,
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    signOut,
+    sendPasswordResetEmail,
+    updateProfile,
+    updatePassword,
+    GoogleAuthProvider,
+    signInWithPopup,
+} from 'firebase/auth';
 
 const AuthContext = createContext();
 
@@ -10,11 +20,7 @@ export const AuthProvider = ({ children }) => {
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
-            if (user && !user.displayName && user.email) {
-                // Fallback displayName if none exists
-                user.displayName = user.email.split('@')[0];
-            }
-            setCurrentUser(user);
+            setCurrentUser(user ? { ...user } : null);
             setLoading(false);
         });
         return unsubscribe;
@@ -28,26 +34,48 @@ export const AuthProvider = ({ children }) => {
         return createUserWithEmailAndPassword(auth, email, password);
     };
 
-    const logout = () => {
-        return signOut(auth);
+    const logout = () => signOut(auth);
+
+    const resetPassword = (email) => sendPasswordResetEmail(auth, email);
+
+    const loginWithGoogle = async () => {
+        const provider = new GoogleAuthProvider();
+        const result = await signInWithPopup(auth, provider);
+        setCurrentUser({ ...result.user });
+        return result;
     };
 
-    const resetPassword = (email) => {
-        return sendPasswordResetEmail(auth, email);
+    const updateDisplayName = async (name, photoURL) => {
+        const payload = {};
+        if (name !== undefined) payload.displayName = name;
+        if (photoURL !== undefined) payload.photoURL = photoURL;
+        await updateProfile(auth.currentUser, payload);
+        setCurrentUser({ ...auth.currentUser });
     };
 
-    const contextValue = {
-        currentUser,
-        login,
-        register,
-        logout,
-        resetPassword,
+    const updateUserPassword = async (newPassword) => {
+        await updatePassword(auth.currentUser, newPassword);
     };
 
-    if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Đang kết nối Server...</div>;
+    if (loading) {
+        return (
+            <div style={{
+                minHeight: '100vh',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexDirection: 'column',
+                gap: '1rem',
+                backgroundColor: '#070f1e',
+            }}>
+                <img src="/logo.png" alt="NKSSS" style={{ width: '64px', height: '64px', borderRadius: '50%', opacity: 0.8 }} />
+                <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Đang kết nối...</p>
+            </div>
+        );
+    }
 
     return (
-        <AuthContext.Provider value={contextValue}>
+        <AuthContext.Provider value={{ currentUser, login, loginWithGoogle, register, logout, resetPassword, updateDisplayName, updateUserPassword }}>
             {children}
         </AuthContext.Provider>
     );

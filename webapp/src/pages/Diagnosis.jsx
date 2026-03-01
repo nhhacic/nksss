@@ -1,6 +1,9 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePatient } from '../context/PatientContext';
+import { useTranslation } from '../i18n/LanguageContext';
+import { useToast } from '../components/Toast';
+import { savePatient } from '../lib/storage';
 import { Activity } from 'lucide-react';
 
 const WARNING_SIGNS = [
@@ -39,9 +42,11 @@ const RISK_FACTORS_AND_CLINICAL_SIGNS = [
 
 export default function Diagnosis() {
     const navigate = useNavigate();
-    const { patient, updatePatient } = usePatient();
+    const { patient, updatePatient, resetPatient } = usePatient();
     const [warnings, setWarnings] = useState(patient.warningSigns || []);
     const [risks, setRisks] = useState(patient.riskFactors || []);
+    const { t } = useTranslation();
+    const toast = useToast();
 
     const handleToggle = (item, list, setList) => {
         if (list.includes(item)) {
@@ -51,30 +56,43 @@ export default function Diagnosis() {
         }
     };
 
-    const calculateDiagnosis = () => {
-        // Logic from Guidelines
+    // Memoized diagnosis calculation (was called 4x per render before)
+    const diagnosis = useMemo(() => {
         if (warnings.length >= 1 || risks.length >= 2) {
             return 'A';
         } else if (risks.length === 1) {
             return 'B';
         }
         return null;
-    };
+    }, [warnings, risks]);
 
-    const handleNext = () => {
-        const diag = calculateDiagnosis();
-        updatePatient({
+    const handleNext = async () => {
+        const updatedData = {
             warningSigns: warnings,
             riskFactors: risks,
-            diagnosis: diag
-        });
+            diagnosis
+        };
+        updatePatient(updatedData);
 
-        if (diag === 'A') {
+        if (diagnosis === 'A') {
             navigate('/treatment');
-        } else if (diag === 'B') {
-            navigate('/followup');
+        } else if (diagnosis === 'B') {
+            // Hướng B: lưu hồ sơ bệnh nhân vào Firestore trước khi chuyển trang
+            try {
+                const patientToSave = {
+                    ...patient,
+                    ...updatedData,
+                    tags: [...new Set([...(patient.tags || []), 'Hướng B', 'Theo dõi'])],
+                };
+                await savePatient(patientToSave);
+                resetPatient();
+                navigate('/followup');
+            } catch (error) {
+                console.error("Lỗi khi lưu hồ sơ:", error);
+                toast.error(t('diagnosis.saveError'));
+            }
         } else {
-            alert("Không có dấu hiệu nhiễm khuẩn cần xử lý sơ sinh sớm hoặc cần theo dõi thêm.");
+            toast.warning(t('diagnosis.noSigns'));
         }
     };
 
@@ -82,12 +100,12 @@ export default function Diagnosis() {
         <div className="card">
             <h2 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Activity size={24} color="var(--color-primary)" />
-                II. Chẩn đoán lâm sàng
+                II. {t('diagnosis.title')}
             </h2>
-            <p style={{ color: 'var(--color-text-muted)', marginBottom: '1.5rem' }}>Tick vào các dấu hiệu/yếu tố nguy cơ trẻ có</p>
+            <p style={{ color: 'var(--color-text-muted)', marginBottom: '1.5rem' }}>{t('diagnosis.instruction')}</p>
 
             <div style={{ marginBottom: '2rem' }}>
-                <h3 style={{ marginBottom: '1rem', color: 'var(--color-danger)' }}>BẢNG 1: 6 dấu hiệu cảnh báo</h3>
+                <h3 style={{ marginBottom: '1rem', color: 'var(--color-danger)' }}>{t('diagnosis.table1Title')}</h3>
                 <div style={{ display: 'grid', gap: '0.5rem' }}>
                     {WARNING_SIGNS.map((sign, idx) => (
                         <label key={idx} className={`checkbox-item ${warnings.includes(sign) ? 'checked' : ''}`}>
@@ -99,7 +117,7 @@ export default function Diagnosis() {
             </div>
 
             <div style={{ marginBottom: '2rem' }}>
-                <h3 style={{ marginBottom: '1rem', color: 'var(--color-warning)' }}>BẢNG 2: Yếu tố nguy cơ & 14 dấu hiệu lâm sàng</h3>
+                <h3 style={{ marginBottom: '1rem', color: 'var(--color-warning)' }}>{t('diagnosis.table2Title')}</h3>
                 <div style={{ display: 'grid', gap: '0.5rem' }}>
                     {RISK_FACTORS_AND_CLINICAL_SIGNS.map((sign, idx) => (
                         <label key={idx} className={`checkbox-item ${risks.includes(sign) ? 'checked' : ''}`}>
@@ -110,24 +128,24 @@ export default function Diagnosis() {
                 </div>
             </div>
 
-            {calculateDiagnosis() === 'A' && (
+            {diagnosis === 'A' && (
                 <div style={{ padding: '1rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--color-danger)', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem', color: 'var(--color-danger)' }}>
-                    <strong>CẢNH BÁO ĐỎ (Hướng A):</strong> Có chỉ định dùng kháng sinh trong 1 giờ đầu. Cần lấy mẫu cấy máu ngay.
+                    <strong>{t('diagnosis.catAAlert')}:</strong> {t('diagnosis.catADesc')}
                 </div>
             )}
 
-            {calculateDiagnosis() === 'B' && (
+            {diagnosis === 'B' && (
                 <div style={{ padding: '1rem', backgroundColor: 'rgba(245, 158, 11, 0.1)', border: '1px solid var(--color-warning)', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem', color: 'var(--color-warning)' }}>
-                    <strong>THEO DÕI (Hướng B):</strong> Tạm hoãn sử dụng kháng sinh. Theo dõi sát trên lâm sàng trong ít nhất 12 giờ tới.
+                    <strong>{t('diagnosis.catBAlert')}:</strong> {t('diagnosis.catBMonitor')}
                 </div>
             )}
 
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2rem' }}>
                 <button className="btn btn-secondary" onClick={() => navigate(-1)}>
-                    &larr; Quay lại
+                    ← {t('common.back')}
                 </button>
-                <button className="btn btn-primary" onClick={handleNext} disabled={!calculateDiagnosis()}>
-                    {calculateDiagnosis() === 'A' ? 'Phác đồ kháng sinh &rarr;' : calculateDiagnosis() === 'B' ? 'Lập hồ sơ theo dõi &rarr;' : 'Hoàn thành'}
+                <button className="btn btn-primary" onClick={handleNext} disabled={!diagnosis}>
+                    {diagnosis === 'A' ? t('diagnosis.nextAbx') : diagnosis === 'B' ? t('diagnosis.nextMonitor') : t('diagnosis.complete')}
                 </button>
             </div>
         </div>

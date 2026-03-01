@@ -1,5 +1,6 @@
 import { collection, doc, getDocs, getDoc, setDoc, deleteDoc, query, where } from 'firebase/firestore';
-import { db, auth } from './firebase';
+import { ref, deleteObject } from 'firebase/storage';
+import { db, auth, storage } from './firebase';
 
 const getCurrentUserId = () => {
     return auth.currentUser ? auth.currentUser.uid : null;
@@ -51,3 +52,53 @@ export const savePatient = async (patient) => {
 export const deletePatient = async (id) => {
     await deleteDoc(doc(db, 'patients', id));
 };
+
+/**
+ * Transfer a patient to another doctor
+ */
+export const transferPatient = async (patientId, newDoctorId, newDoctorName, oldDoctorName) => {
+    const docRef = doc(db, 'patients', patientId);
+    const now = new Date().toISOString();
+    await setDoc(docRef, {
+        doctorId: newDoctorId,
+        updatedAt: now,
+        transferHistory: [{
+            from: oldDoctorName,
+            to: newDoctorName,
+            at: now,
+        }]
+    }, { merge: true });
+};
+
+/**
+ * Add a timeline event to patient record
+ */
+export const addTimelineEvent = async (patientId, event) => {
+    const patientDoc = await getDoc(doc(db, 'patients', patientId));
+    if (!patientDoc.exists()) return;
+
+    const currentTimeline = patientDoc.data().timeline || [];
+    currentTimeline.push({
+        ...event,
+        timestamp: new Date().toISOString(),
+    });
+
+    await setDoc(doc(db, 'patients', patientId), {
+        timeline: currentTimeline,
+        updatedAt: new Date().toISOString(),
+    }, { merge: true });
+};
+
+/**
+ * Delete a file from Firebase Storage by its download URL
+ */
+export const deleteStorageFile = async (downloadUrl) => {
+    try {
+        const fileRef = ref(storage, downloadUrl);
+        await deleteObject(fileRef);
+    } catch (error) {
+        // File may already be deleted or URL may be invalid
+        console.warn('Failed to delete storage file:', error.message);
+    }
+};
+

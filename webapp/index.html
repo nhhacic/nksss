@@ -8,9 +8,27 @@
   <meta name="theme-color" content="#0f172a" />
   <link rel="manifest" href="/manifest.json" />
   <link rel="apple-touch-icon" href="/logo.png" />
+  <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>NKSSS Online</title>
+  <script>
+    // Xử lý tự động dọn rác Service Worker nếu trình duyệt load sai MIME type (lỗi trắng màn hình do Cache)
+    window.addEventListener('error', function (e) {
+      if ((e.target && e.target.tagName === 'SCRIPT') || (e.message && e.message.includes('MIME'))) {
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function (registrations) {
+            for (let i = 0; i < registrations.length; i++) {
+              registrations[i].unregister();
+            }
+            window.location.reload(true); // Force reload từ Network
+          });
+        } else {
+          window.location.reload(true);
+        }
+      }
+    }, true);
+  </script>
 </head>
 
 <body>

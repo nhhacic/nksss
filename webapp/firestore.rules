@@ -1,0 +1,45 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Patients: only the owning doctor can read/write
+    match /patients/{patientId} {
+      allow read, update, delete: if request.auth != null && resource.data.doctorId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.doctorId == request.auth.uid;
+    }
+
+    // Notifications: user can only read/update their own
+    match /notifications/{notificationId} {
+      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null;
+    }
+
+    // Subscriptions: user can only manage their own push subscription
+    match /subscriptions/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // User profiles: user can only read/write their own
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Consults: any authenticated user can read/create, only author can update main doc
+    match /consults/{consultId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      // Only the author can update/close their consult; replies update replyCount via any auth user
+      allow update: if request.auth != null && (
+        resource.data.authorId == request.auth.uid ||
+        // Allow incrementing replyCount and updatedAt by any authenticated user
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['replyCount', 'updatedAt'])
+      );
+
+      // Replies subcollection
+      match /replies/{replyId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null;
+      }
+    }
+  }
+}

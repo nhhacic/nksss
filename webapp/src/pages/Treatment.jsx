@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePatient } from '../context/PatientContext';
+import { useTranslation } from '../i18n/LanguageContext';
 import { Stethoscope } from 'lucide-react';
 
 const ANTIBIOTIC_GROUPS = [
@@ -15,6 +16,7 @@ export default function Treatment() {
     const navigate = useNavigate();
     const { patient, updatePatient } = usePatient();
     const [selectedGroup, setSelectedGroup] = useState(patient.antibioticGroup || null);
+    const { t } = useTranslation();
 
     const handleNext = () => {
         if (!selectedGroup) return;
@@ -27,9 +29,9 @@ export default function Treatment() {
         <div className="card">
             <h2 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Stethoscope size={24} color="var(--color-primary)" />
-                III. Hướng dẫn điều trị
+                III. {t('treatment.title')}
             </h2>
-            <p style={{ color: 'var(--color-text-muted)', marginBottom: '1.5rem' }}>Chọn 1 trong 5 biểu hiện lâm sàng để có phác đồ kháng sinh tương ứng</p>
+            <p style={{ color: 'var(--color-text-muted)', marginBottom: '1.5rem' }}>{t('treatment.selectGroup')}</p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
                 {ANTIBIOTIC_GROUPS.map((group) => (
@@ -42,7 +44,7 @@ export default function Treatment() {
                         <input type="radio" style={{ display: 'none' }} name="antibiotic_group" checked={selectedGroup?.id === group.id} onChange={() => setSelectedGroup(group)} />
                         <div style={{ fontWeight: '600', marginBottom: '0.5rem' }}>{group.label}</div>
                         <div style={{ color: 'var(--color-primary)', fontWeight: '500', fontSize: '0.9rem', padding: '0.5rem', background: 'var(--color-surface)', borderTop: '1px dashed var(--color-border)' }}>
-                            Phác đồ: {group.rec}
+                            {t('treatment.protocol')}: {group.rec}
                         </div>
                     </label>
                 ))}
@@ -50,10 +52,10 @@ export default function Treatment() {
 
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2rem' }}>
                 <button className="btn btn-secondary" onClick={() => navigate(-1)}>
-                    &larr; Quay lại
+                    &larr; {t('common.back')}
                 </button>
                 <button className="btn btn-primary" onClick={handleNext} disabled={!selectedGroup}>
-                    Tiếp tục (Chọn thuốc, Tính liều) &rarr;
+                    {t('treatment.calculateDosage')}
                 </button>
             </div>
         </div>
