@@ -383,7 +383,7 @@ export default function AppLayout() {
                 borderTop: '1px solid var(--color-border)',
                 marginTop: '2rem'
             }}>
-                © {new Date().getFullYear()} NKSSS - Bản quyền thuộc về Shark Hà
+                © {new Date().getFullYear()} NKSSS - Bản quyền thuộc về Shark Hà đẹp trai
             </div>
         </div >
     );
