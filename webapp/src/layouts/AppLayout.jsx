@@ -375,6 +375,16 @@ export default function AppLayout() {
             <main className="page-content animate-slide-up">
                 <Outlet />
             </main>
+            <div className="copyright-footer" style={{
+                textAlign: 'center',
+                padding: '1rem',
+                fontSize: '0.75rem',
+                color: 'var(--color-text-muted)',
+                borderTop: '1px solid var(--color-border)',
+                marginTop: '2rem'
+            }}>
+                © {new Date().getFullYear()} NKSSS - Bản quyền thuộc về Shark Hà
+            </div>
         </div >
     );
 }
